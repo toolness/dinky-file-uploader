@@ -72,8 +72,18 @@ input {
 #uploaded-files button:hover {
   background: red;
 }
+
+div.alert {
+  margin-bottom: 1em;
+  border: 1px solid red;
+  background: firebrick;
+  font-weight: bold;
+  color: lightgray;
+  padding: 10px;
+}
 </style>
 <h1>File Uploader</h1>
+<div id="alerts"></div>
 <div id="drop_zone">Drop files here to upload them.</div>
 <form method="POST" action="save-passkey">
   <label for="passkey">Passkey:</label>
@@ -83,6 +93,15 @@ input {
 <h2>Uploaded Files</h2>
 <ul id="uploaded-files"></ul>
 <script>
+function alert(msg) {
+  var alerts = document.getElementById("alerts");
+  var alert = document.createElement('div');
+  var text = document.createTextNode(msg);
+  alert.className = "alert";
+  alert.appendChild(text);
+  alerts.appendChild(alert);
+}
+
 function handleFileSelect(evt) {
   evt.stopPropagation();
   evt.preventDefault();
