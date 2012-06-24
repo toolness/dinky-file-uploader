@@ -146,7 +146,7 @@ function refreshList() {
       req.onerror = function() {
         alert("removal failed!");
       };
-      req.open('POST', '/remove/' + entry.id);
+      req.open('POST', 'remove/' + entry.id);
       req.setRequestHeader('X-Revocation-Key', entry.revocationKey);
       req.send(null);
       removeBtn.parentNode.classList.add("removing");
@@ -190,7 +190,7 @@ function upload(file) {
     changeNumUploads(-1);
     alert("Something real bad happened.");
   };
-  req.open('POST', '/upload');
+  req.open('POST', 'upload');
   req.setRequestHeader('X-Creation-Key', passkey);
   req.send(file);
   changeNumUploads(1);
