@@ -211,6 +211,7 @@ function upload(file) {
   };
   req.open('POST', 'upload');
   req.setRequestHeader('X-Creation-Key', passkey);
+  req.setRequestHeader('Content-Type', file.type);
   req.send(file);
   changeNumUploads(1);
 }
