@@ -1,0 +1,14 @@
+{ "name": "file-uploader"
+, "description": "simple file uploader web app."
+, "version": "0.1.0"
+, "private": true
+, "scripts" :
+  { "test" : "node test.js" }
+, "dependencies":
+  { "express": "2.5.x"
+  , "knox": "0.0.x"
+  , "request": "2.9.x"
+  }
+, "engines":
+  { "node":  "*" }
+}
