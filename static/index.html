@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<title>upload test</title>
+<style>
+* {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  
+  -moz-transition: opacity 0.25s;
+  -webkit-transition: opacity 0.25s;
+  -o-transition: opacity 0.25s;
+}
+
+html {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: smaller;
+  background: #f0f0f0;
+}
+
+body {
+  width: 480px;
+  margin: 0 auto;
+}
+
+#drop_zone {
+  width: 100%;
+  border: 1px dashed gray;
+  padding: 40px;
+  font-size: 30px;
+  text-align: center;
+  color: gray;
+  background: white;
+}
+
+.removing {
+  opacity: 0.33;
+}
+
+.mimetype {
+  color: gray;
+}
+
+#uploaded-files a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#uploaded-files a:hover {
+  text-decoration: underline;
+}
+
+form {
+  padding-top: 1em;
+}
+
+input {
+  border: 1px solid black;
+  padding: 3px;
+}
+
+#uploaded-files button {
+  border: 1px solid gray;
+  background: firebrick;
+  color: white;
+  cursor: pointer;
+}
+
+#uploaded-files button:hover {
+  background: red;
+}
+</style>
+<h1>File Uploader</h1>
+<div id="drop_zone">Drop files here to upload them.</div>
+<form>
+  <label for="passkey">Passkey:</label>
+  <input type="password" name="passkey" id="passkey">
+</form>
+<p id="status"></p>
+<h2>Uploaded Files</h2>
+<ul id="uploaded-files"></ul>
+<script>
+function handleFileSelect(evt) {
+  evt.stopPropagation();
+  evt.preventDefault();
+
+  var files = evt.dataTransfer.files; // FileList object.
+
+  // files is a FileList of File objects. List some properties.
+  for (var i = 0, f; f = files[i]; i++) {
+    upload(f);
+  }
+}
+
+function handleDragOver(evt) {
+  evt.stopPropagation();
+  evt.preventDefault();
+  evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+}
+
+// Setup the dnd listeners.
+var dropZone = document.getElementById('drop_zone');
+dropZone.addEventListener('dragover', handleDragOver, false);
+dropZone.addEventListener('drop', handleFileSelect, false);
+
+function getLog() {
+  var log = localStorage['uploads'];
+  if (!log)
+    log = JSON.stringify({entries: []});
+  return JSON.parse(log);
+}
+
+function addToLog(entry) {
+  var log = getLog();
+  log.entries.push(entry);
+  localStorage['uploads'] = JSON.stringify(log);
+}
+
+function refreshList() {
+  var list = document.getElementById("uploaded-files");
+  var output = [];
+  var log = getLog();
+  log.entries.forEach(function(entry) {
+    output.unshift('<li><a href="' + entry.url + '">' + entry.url + '</a>' +
+                   ' <span class="mimetype">' + entry.type + '</span>' +
+                   ' <button id="remove-' + entry.id + '">remove</button>' +
+                   '</li>');
+  });
+  if (log.entries.length == 0)
+    output = ['<li>no files have been uploaded recently.</li>'];
+  
+  list.innerHTML = output.join('');
+  log.entries.forEach(function(entry) {
+    var removeBtn = document.getElementById("remove-" + entry.id);
+    
+    function remove() {
+      var req = new XMLHttpRequest();
+      req.onload = function() {
+        log.entries.splice(log.entries.indexOf(entry), 1);
+        localStorage['uploads'] = JSON.stringify(log);
+        refreshList();
+      };
+      req.onerror = function() {
+        alert("removal failed!");
+      };
+      req.open('POST', '/remove/' + entry.id);
+      req.setRequestHeader('X-Revocation-Key', entry.revocationKey);
+      req.send(null);
+      removeBtn.parentNode.classList.add("removing");
+      removeBtn.removeEventListener("click", remove, false);
+    }
+    
+    removeBtn.addEventListener("click", remove, false);
+  });
+}
+
+var numUploads = 0;
+
+function changeNumUploads(amount) {
+  numUploads += amount;
+  var status = document.getElementById("status");
+  if (numUploads > 1)
+    status.innerHTML = numUploads + " files are currently being uploaded.";
+  else if (numUploads == 1)
+    status.innerHTML = "1 file is currently being uploaded.";
+  else
+    status.innerHTML = "No files are currently being uploaded.";
+}
+
+function upload(file) {
+  var req = new XMLHttpRequest();
+  var passkey = document.getElementById('passkey').value;
+  req.onload = function() {
+    changeNumUploads(-1);
+    if (req.status == 403) {
+      alert('bad passkey');
+    } else if (req.status == 200) {
+      var entry = JSON.parse(req.responseText);
+      entry.type = file.type;
+      addToLog(entry);
+      refreshList();
+    } else {
+      alert('something bad happened');
+    }
+  };
+  req.onerror = function() {
+    changeNumUploads(-1);
+    alert("Something real bad happened.");
+  };
+  req.open('POST', '/upload');
+  req.setRequestHeader('X-Creation-Key', passkey);
+  req.send(file);
+  changeNumUploads(1);
+}
+
+refreshList();
+changeNumUploads(0);
+</script>
