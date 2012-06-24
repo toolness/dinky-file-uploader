@@ -121,6 +121,10 @@ function putIntoRandomLocation(s3, inputStream, options, cb, paused) {
   }).end();
 }
 
+app.post('/save-passkey', function(req, res) {
+  return res.redirect(config.baseURL || '/');
+});
+
 app.post('/remove/:id', function(req, res) {
   var loc = '/' + req.params.id;
   getPrivateMetadata(s3, loc, function(err, metadata) {
