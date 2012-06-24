@@ -121,6 +121,25 @@ function putIntoRandomLocation(s3, inputStream, options, cb, paused) {
   }).end();
 }
 
+app.s3 = s3;
+
+app.removeUpload = function(s3, id, cb) {
+  var loc = '/' + id;
+  var reqsLeft = 2;
+  var errorsOccured = null;
+  
+  function reqDone(delRes) {
+    if (delRes.statusCode != 204)
+      errorsOccured = "could not delete content and/or metadata";
+    reqsLeft--;
+    if (!reqsLeft)
+      cb(errorsOccured);
+  }
+  
+  s3.del(loc).on('response', reqDone).end();
+  s3.del(loc + PRIVATE_METADATA_SUFFIX).on('response', reqDone).end();
+};
+
 app.post('/save-passkey', function(req, res) {
   return res.redirect(config.baseURL || '/');
 });
@@ -133,23 +152,12 @@ app.post('/remove/:id', function(req, res) {
     if (req.header('x-revocation-key') != metadata.revocationKey)
       return res.send(403);
     
-    var reqsLeft = 2;
-    var errorsOccured = false;
-    
-    function reqDone(delRes) {
-      if (delRes.statusCode != 204)
-        errorsOccured = true;
-      reqsLeft--;
-      if (!reqsLeft) {
-        if (errorsOccured)
-          res.send("could not delete content and/or metadata", 500);
-        else
-          res.send(204);
-      }
-    }
-    
-    s3.del(loc).on('response', reqDone).end();
-    s3.del(loc + PRIVATE_METADATA_SUFFIX).on('response', reqDone).end();
+    app.removeUpload(s3, req.params.id, function(err) {
+      if (err)
+        res.send(err, 500);
+      else
+        res.send(204);
+    });
   });
 });
 
