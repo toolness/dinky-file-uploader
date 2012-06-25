@@ -59,6 +59,7 @@ function putPrivateMetadata(s3, loc, obj, cb) {
   var req = s3.put(loc + PRIVATE_METADATA_SUFFIX, {
     'Content-Length': metadata.length,
     'Content-Type': 'application/json',
+    'x-amz-storage-class': 'REDUCED_REDUNDANCY',
     'x-amz-acl': 'private'
   });
   req.on('response', function(res) {
@@ -167,7 +168,8 @@ app.post('/upload', function(req, res) {
   
   putIntoRandomLocation(s3, req, {
     'Content-Length': req.header('content-length'),
-    'Content-Type': req.header('content-type')
+    'Content-Type': req.header('content-type'),
+    'x-amz-storage-class': 'REDUCED_REDUNDANCY'
   }, function(err, result) {
     if (err)
       res.send({
