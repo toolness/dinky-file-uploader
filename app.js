@@ -16,7 +16,7 @@ const TINY_ALPHABET = 'abcdefghijklmnopqrstuvwxyz',
       BIG_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' +
                      '0123456789',
       BIG_LENGTH = 48,
-      PRIVATE_METADATA_SUFFIX = '/private';
+      PRIVATE_METADATA_SUFFIX = '.private';
 
 app.generateRandomKey = function(alphabet, numChars) {
   var key = '',
