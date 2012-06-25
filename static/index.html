@@ -84,7 +84,8 @@ div.alert {
 </style>
 <h1>File Uploader</h1>
 <div id="alerts"></div>
-<div id="drop_zone">Drop files here to upload them.</div>
+<div id="drop_zone" contenteditable="true">Drop files here to upload 
+  them.</div>
 <form method="POST" action="save-passkey">
   <label for="passkey">Passkey:</label>
   <input type="password" name="passkey" id="passkey">
@@ -100,6 +101,33 @@ function alert(msg) {
   alert.className = "alert";
   alert.appendChild(text);
   alerts.appendChild(alert);
+}
+
+
+// http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+function dataURItoBlob(dataURI) {
+  // doesn't handle URLEncoded DataURIs
+  var parts = dataURI.match(/^data:([^;]+);base64,(.+)/);
+  
+  if (!parts)
+    return null;
+  
+  var byteString = atob(parts[2]);
+  var mimeString = parts[1];
+  
+  // write the bytes of the string to an ArrayBuffer
+  var ab = new ArrayBuffer(byteString.length);
+  var ia = new Uint8Array(ab);
+  for (var i = 0; i < byteString.length; i++)
+    ia[i] = byteString.charCodeAt(i);
+
+  // write the ArrayBuffer to a blob, and you're done
+  var BlobBuilder = (window.MozBlobBuilder || window.WebKitBlobBuilder || 
+                     window.BlobBuilder);
+  
+  var bb = new BlobBuilder();
+  bb.append(ab);
+  return bb.getBlob(mimeString);
 }
 
 function handleFileSelect(evt) {
@@ -122,8 +150,20 @@ function handleDragOver(evt) {
 
 // Setup the dnd listeners.
 var dropZone = document.getElementById('drop_zone');
+var dropZoneOriginalHTML = dropZone.innerHTML;
 dropZone.addEventListener('dragover', handleDragOver, false);
 dropZone.addEventListener('drop', handleFileSelect, false);
+dropZone.addEventListener('DOMSubtreeModified', function(event) {
+  // If a user has pasted in an image, see if it's a data URI. If so,
+  // we can convert it to a Blob and uplaod it.
+  var images = this.querySelectorAll('img[src^="data:"]');
+  for (var i = 0; i < images.length; i++) {
+    var blob = dataURItoBlob(images[i].src);
+    if (blob)
+      upload(blob);
+  }
+  dropZone.innerHTML = dropZoneOriginalHTML;
+}, false);
 
 function getLog() {
   var log = localStorage['uploads'];
