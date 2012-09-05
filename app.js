@@ -187,3 +187,11 @@ app.post('/upload', function(req, res) {
 app.use(express.static(__dirname + '/static'));
 
 module.exports = app;
+
+var port = process.env['PORT'] || 3000;
+
+if (!module.parent)
+  app.listen(port, function() {
+    console.log('listening on port ' + port);
+  });
+  
